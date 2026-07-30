@@ -12,6 +12,26 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 from mlflow.models import infer_signature
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Set up DagsHub credentials for MLflow tracking
+dagshub_token = os.getenv("DAGSHUB_PAT")
+if not dagshub_token:
+    raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
+
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+
+
+dagshub_url = "https://dagshub.com"
+repo_owner = "iamdebasishdas123"
+repo_name = "YouTube-Mood-Tracker"
+
+
 
 # logging configuration
 logger = logging.getLogger('model_evaluation')
@@ -127,9 +147,10 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
 
 
 def main():
-    mlflow.set_tracking_uri("http://ec2-54-196-109-131.compute-1.amazonaws.com:5000/")
+    # Set up MLflow tracking URI
+    mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 
-    mlflow.set_experiment('dvc-pipeline-runs')
+    mlflow.set_experiment('Mood_Classification_DVC_Experiment')
     
     with mlflow.start_run() as run:
         try:
