@@ -6,6 +6,7 @@ import logging
 import os
 import dagshub
 from dotenv import load_dotenv
+import pickle
 
 # Load environment variables from .env file
 load_dotenv()
@@ -63,24 +64,41 @@ def load_model_info(file_path: str) -> dict:
 
 def register_model(model_name: str, model_info: dict):
     """Register the model to the MLflow Model Registry."""
-    try:
-        model_uri = f"runs:/{model_info['run_id']}/{model_info['model_path']}"
-        
-        # Register the model
-        model_version = mlflow.register_model(model_uri, model_name)
-        
-        # Transition the model to "Staging" stage
-        client = mlflow.tracking.MlflowClient()
-        client.transition_model_version_stage(
-            name=model_name,
-            version=model_version.version,
-            stage="Staging"
+    client = mlflow.tracking.MlflowClient()
+    model_path = model_info['model_path']+".pkl"
+    # Load the model from the local pickle file
+    with open(model_path, 'rb') as f:
+        model = pickle.load(f)
+    logger.debug('Model loaded from %s', model_info['model_path'])
+
+    # Set the correct experiment (avoid defaulting to experiment 0)
+    
+
+    # Log AND register inside the same run context
+    with mlflow.start_run(run_name="model_registration") as run:
+        model_info_mlflow = mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model",        
+            registered_model_name=model_name  # ✅ register directly here
         )
-        
-        logger.debug(f'Model {model_name} version {model_version.version} registered and transitioned to Staging.')
-    except Exception as e:
-        logger.error('Error during model registration: %s', e)
-        raise
+        new_run_id = run.info.run_id
+        logger.debug('Model logged and registered in run %s', new_run_id)
+
+    # Transition to Staging
+    # Get the latest version just registered
+    versions = client.get_latest_versions(model_name, stages=["None"])
+    latest_version = versions[0].version
+
+    client.transition_model_version_stage(
+        name=model_name,
+        version=latest_version,
+        stage="Staging"
+    )
+    logger.debug(
+        'Model %s version %s transitioned to Staging.',
+        model_name, latest_version
+    )
+
 
 def main():
     try:
