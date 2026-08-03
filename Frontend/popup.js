@@ -2,8 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   const outputDiv = document.getElementById("output");
-  const API_KEY = import.meta.env.VITE_YOUTUBE_DATA_API; // Replace with your actual YouTube Data API key
-  const API_URL = 'http://localhost:8000';  // Replace with your actual API URL
+  const API_URL = 'http://localhost:8001';
 
   // Get the current tab's URL
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -122,28 +121,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   async function fetchComments(videoId) {
-    let comments = [];
-    let pageToken = "";
     try {
-      while (comments.length < 500) {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&pageToken=${pageToken}&key=${API_KEY}`);
-        const data = await response.json();
-        if (data.items) {
-          data.items.forEach(item => {
-            const commentText = item.snippet.topLevelComment.snippet.textOriginal;
-            const timestamp = item.snippet.topLevelComment.snippet.publishedAt;
-            const authorId = item.snippet.topLevelComment.snippet.authorChannelId?.value || 'Unknown';
-            comments.push({ text: commentText, timestamp: timestamp, authorId: authorId });
-          });
-        }
-        pageToken = data.nextPageToken;
-        if (!pageToken) break;
+      const response = await fetch(`${API_URL}/fetch_comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ video_id: videoId })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to fetch comments');
       }
+      return data.comments || [];
     } catch (error) {
       console.error("Error fetching comments:", error);
       outputDiv.innerHTML += "<p>Error fetching comments.</p>";
+      return [];
     }
-    return comments;
   }
 
   async function getSentimentPredictions(comments) {

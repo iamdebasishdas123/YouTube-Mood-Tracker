@@ -1,5 +1,9 @@
 import io
+import json
 import re
+import urllib.parse
+import urllib.request
+from pathlib import Path
 from typing import List, Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,8 +26,9 @@ from dotenv import load_dotenv
 import pickle
 import os
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from the workspace .env file
+env_path = Path(__file__).resolve().parents[3] / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Set up DagsHub credentials for MLflow tracking
 dagshub_token = os.getenv("DAGSHUB_PAT")
@@ -57,6 +62,9 @@ class CommentItem(BaseModel):
 
 class PredictWithTimestampsInput(BaseModel):
     comments: List[CommentItem]
+
+class FetchCommentsInput(BaseModel):
+    video_id: str
 
 class PredictInput(BaseModel):
     comments: List[str]
@@ -101,6 +109,40 @@ model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "1", "./
 @app.get('/')
 def home():
     return {"message": "Welcome to our FastAPI"}
+
+@app.post('/fetch_comments')
+def fetch_comments(data: FetchCommentsInput):
+    try:
+        youtube_api_key = os.getenv("YOUTUBE_DATA_API")
+        if not youtube_api_key:
+            raise HTTPException(status_code=500, detail="YOUTUBE_DATA_API is not configured")
+
+        params = {
+            "part": "snippet",
+            "videoId": data.video_id,
+            "maxResults": 100,
+            "key": youtube_api_key,
+        }
+        url = "https://www.googleapis.com/youtube/v3/commentThreads?" + urllib.parse.urlencode(params)
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+        comments = []
+        for item in payload.get("items", []):
+            snippet = item.get("snippet", {}).get("topLevelComment", {}).get("snippet", {})
+            comments.append({
+                "text": snippet.get("textOriginal", ""),
+                "timestamp": snippet.get("publishedAt", ""),
+                "authorId": snippet.get("authorChannelId", {}).get("value", "Unknown"),
+            })
+
+        return {"comments": comments}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch comments: {str(e)}")
 
 @app.post('/predict_with_timestamps')
 def predict_with_timestamps(data: PredictWithTimestampsInput):
