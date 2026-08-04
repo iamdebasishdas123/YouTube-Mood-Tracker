@@ -104,3 +104,15 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: python scripts/promote_model.py
+
+      - name: Start Flask API server
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          uvicorn app.api.v1.predict:app --host 0.0.0.0 --port 8001 &
+
+      - name: Run FastAPI tests
+        run: |
+          pytest scripts/test_fast_api.py

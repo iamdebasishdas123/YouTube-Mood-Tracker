@@ -120,7 +120,7 @@ def fetch_comments(data: FetchCommentsInput):
         params = {
             "part": "snippet",
             "videoId": data.video_id,
-            "maxResults": 100,
+            "maxResults": 500,
             "key": youtube_api_key,
         }
         url = "https://www.googleapis.com/youtube/v3/commentThreads?" + urllib.parse.urlencode(params)
