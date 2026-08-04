@@ -49,3 +49,6 @@ def test_load_latest_staging_model(model_name, stage):
 
     except Exception as e:
         pytest.fail(f"Model loading failed with error: {e}")
+
+if __name__ == "__main__":
+    test_load_latest_staging_model("yt_chrome_plugin_model", "staging")

@@ -76,4 +76,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          pytest scripts/test_load_model.py      
+          pytest scripts/test_load_model.py
+                
