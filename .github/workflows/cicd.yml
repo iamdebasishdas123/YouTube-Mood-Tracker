@@ -111,4 +111,4 @@ jobs:
           sleep 10
 
       - name: Run FastAPI tests
-        run: pytest scripts/test_fast_api.py
+        run: python -m pytest scripts/test_fast_api.py

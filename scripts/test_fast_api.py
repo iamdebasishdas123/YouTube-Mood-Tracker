@@ -1,8 +1,16 @@
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT_DIR))
+
 import pytest
 from fastapi.testclient import TestClient
 from app.api.v1 import predict
 
 client = TestClient(predict.app)
+
+# ... rest of file unchanged ...
 
 def test_predict_endpoint():
     data = {
@@ -52,7 +60,11 @@ def test_generate_trend_graph_endpoint():
     assert response.headers["Content-Type"] == "image/png"
 
 def test_fetch_youtube_comments_endpoint():
-    data = {"video_id": "eKHoLpi2ey4"}
+    data = {"video_id": "3cT-Nige84o"}
     response = client.post("/fetch_comments", json=data)
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+
+    body = response.json()
+    assert isinstance(body, dict)
+    assert "comments" in body
+    assert isinstance(body["comments"], list)
