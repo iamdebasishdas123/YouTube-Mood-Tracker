@@ -1,14 +1,14 @@
 import pytest
-import requests
-import json
+from fastapi.testclient import TestClient
+from app.api.v1 import predict
 
-BASE_URL = "http://localhost:8001"  # Replace with your deployed URL if needed
+client = TestClient(predict.app)
 
 def test_predict_endpoint():
     data = {
         "comments": ["This is a great product!", "Not worth the money.", "It's okay."]
     }
-    response = requests.post(f"{BASE_URL}/predict", json=data)
+    response = client.post("/predict", json=data)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
@@ -19,15 +19,15 @@ def test_predict_with_timestamps_endpoint():
             {"text": "Could be better.", "timestamp": "2024-10-26 14:00:00"}
         ]
     }
-    response = requests.post(f"{BASE_URL}/predict_with_timestamps", json=data)
+    response = client.post("/predict_with_timestamps", json=data)
     assert response.status_code == 200
-    assert all('sentiment' in item for item in response.json())
+    assert all("sentiment" in item for item in response.json())
 
 def test_generate_chart_endpoint():
     data = {
         "sentiment_counts": {"1": 5, "0": 3, "-1": 2}
     }
-    response = requests.post(f"{BASE_URL}/generate_chart", json=data)
+    response = client.post("/generate_chart", json=data)
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "image/png"
 
@@ -35,7 +35,7 @@ def test_generate_wordcloud_endpoint():
     data = {
         "comments": ["Love this!", "Not so great.", "Absolutely amazing!", "Horrible experience."]
     }
-    response = requests.post(f"{BASE_URL}/generate_wordcloud", json=data)
+    response = client.post("/generate_wordcloud", json=data)
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "image/png"
 
@@ -47,14 +47,12 @@ def test_generate_trend_graph_endpoint():
             {"timestamp": "2024-10-03", "sentiment": -1}
         ]
     }
-    response = requests.post(f"{BASE_URL}/generate_trend_graph", json=data)
+    response = client.post("/generate_trend_graph", json=data)
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "image/png"
-    
+
 def test_fetch_youtube_comments_endpoint():
-    data = {
-        "video_id": "eKHoLpi2ey4"  # Example YouTube video ID
-    }
-    response = requests.post(f"{BASE_URL}/fetch_comments", json=data)
+    data = {"video_id": "eKHoLpi2ey4"}
+    response = client.post("/fetch_comments", json=data)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
