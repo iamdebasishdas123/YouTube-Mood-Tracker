@@ -111,7 +111,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          uvicorn app.api.v1.predict:app --host 0.0.0.0 --port 8001 &
+          nohup uvicorn app.api.v1.predict:app --host 0.0.0.0 --port 8001 &
 
       - name: Run FastAPI tests
         run: |
