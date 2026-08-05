@@ -23,7 +23,6 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from dotenv import load_dotenv
-import pickle
 import os
 
 # Load environment variables from the workspace .env file

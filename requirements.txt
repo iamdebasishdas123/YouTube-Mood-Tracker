@@ -179,3 +179,4 @@ zc.lockfile==3.0.post1
 zipp==3.19.2
 dotenv==0.9.9
 uvicorn==0.27.0
+fastapi==0.109.0
